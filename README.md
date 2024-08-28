@@ -26,4 +26,4 @@ scons build/NULL/gem5.opt PROTOCOL=Garnet_standalone -j $(nproc)
 ```bash
 bash scripts/get_stats.sh
 ```
-
+Then you can see statistics results in `./network_stats.txt`.
