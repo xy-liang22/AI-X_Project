@@ -1,0 +1,1 @@
+Global frequency set at 2000000000 ticks per second

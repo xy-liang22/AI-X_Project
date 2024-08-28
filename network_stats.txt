@@ -1,0 +1,7 @@
+packets_injected = 1763                       (Packets)
+packets_received = 1763                       (Packets)
+average_packet_queueing_latency = 2                       (Cycle/Packet)
+average_packet_network_latency = 7.627340                       (Cycle/Packet)
+average_packet_latency = 9.627340                       (Cycle/Packet)
+average_hops = 2.310267                       (Hops/Flit)
+reception_rate = .004897                       (Packets/Node/Cycle)
