@@ -200,6 +200,12 @@ class GarnetNetwork : public Network
     uint32_t getBuffersPerCtrlVC() { return m_buffers_per_ctrl_vc; }
     int getRoutingAlgorithm() const { return m_routing_algorithm; }
 
+    Router*
+    getRouterPtr(int idx) {
+      assert(idx < m_routers.size());
+      return m_routers[idx];
+    }
+
     bool isFaultModelEnabled() const { return m_enable_fault_model; }
     FaultModel* fault_model;
 

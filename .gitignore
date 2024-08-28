@@ -4,6 +4,7 @@ parsetab.py
 cscope.files
 cscope.out
 network_stats.txt
+output.txt
 *.pyc
 *~
 .*.swp

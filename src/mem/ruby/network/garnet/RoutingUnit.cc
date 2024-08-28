@@ -27,13 +27,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "mem/ruby/network/garnet/RoutingUnit.hh"
 
 #include "base/cast.hh"
 #include "base/compiler.hh"
+#include "base/random.hh"
 #include "debug/RubyNetwork.hh"
 #include "mem/ruby/network/garnet/InputUnit.hh"
+#include "mem/ruby/network/garnet/OutputUnit.hh"
 #include "mem/ruby/network/garnet/Router.hh"
 #include "mem/ruby/slicc_interface/Message.hh"
 
@@ -167,7 +168,7 @@ RoutingUnit::addOutDirection(PortDirection outport_dirn, int outport_idx)
 
 int
 RoutingUnit::outportCompute(RouteInfo route, int inport,
-                            PortDirection inport_dirn)
+                            PortDirection inport_dirn, flit *t_flit)
 {
     int outport = -1;
 
@@ -189,12 +190,16 @@ RoutingUnit::outportCompute(RouteInfo route, int inport,
         case TABLE_:  outport =
             lookupRoutingTable(route.vnet, route.net_dest); break;
         case XY_:     outport =
-            outportComputeXY(route, inport, inport_dirn); break;
+            outportComputeXY(route, inport, inport_dirn, t_flit); break;
         // any custom algorithm
         case CUSTOM_: outport =
-            outportComputeCustom(route, inport, inport_dirn); break;
-        case DRAGONFLY_: outport = 
-            outportComputeDragonfly(route, inport, inport_dirn); break;
+            outportComputeCustom(route, inport, inport_dirn, t_flit); break;
+        case DRAGONFLY_MINIMAL_: outport =
+            outportComputeDragonflyMinimal(route, inport,
+                                           inport_dirn, t_flit);
+            break;
+        case UGAL_: outport =
+            outportComputeUGAL(route, inport, inport_dirn, t_flit); break;
         default: outport =
             lookupRoutingTable(route.vnet, route.net_dest); break;
     }
@@ -209,7 +214,8 @@ RoutingUnit::outportCompute(RouteInfo route, int inport,
 int
 RoutingUnit::outportComputeXY(RouteInfo route,
                               int inport,
-                              PortDirection inport_dirn)
+                              PortDirection inport_dirn,
+                              flit *t_flit)
 {
     PortDirection outport_dirn = "Unknown";
 
@@ -266,8 +272,9 @@ RoutingUnit::outportComputeXY(RouteInfo route,
 // using port directions. (Example adaptive)
 int
 RoutingUnit::outportComputeCustom(RouteInfo route,
-                                 int inport,
-                                 PortDirection inport_dirn)
+                                  int inport,
+                                  PortDirection inport_dirn,
+                                  flit *t_flit)
 {
     // outportComputeRing
     PortDirection outport_dirn = "Unknown";
@@ -284,7 +291,7 @@ RoutingUnit::outportComputeCustom(RouteInfo route,
 
     // already checked that in outportCompute() function
     assert(hops > 0);
-    
+
     if (dirn) {
         assert(inport_dirn == "Local" || inport_dirn == "West");
         outport_dirn = "East";
@@ -292,48 +299,196 @@ RoutingUnit::outportComputeCustom(RouteInfo route,
         assert(inport_dirn == "Local" || inport_dirn == "East");
         outport_dirn = "West";
     }
-    
+
     return m_outports_dirn2idx[outport_dirn];
 }
 
-// simple outport compute for dragonfly
+// minimal routing algorithm for dragonfly
 int
-RoutingUnit::outportComputeDragonfly(RouteInfo route,
+RoutingUnit::outportComputeDragonflyMinimal(RouteInfo route,
                                     int inport,
-                                    PortDirection inport_dirn)
+                                    PortDirection inport_dirn,
+                                    flit *t_flit)
 {
     PortDirection outport_dirn = "Unknown";
     int num_routers = m_router->get_net_ptr()->getNumRouters();
     assert(num_routers > 0);
-    
+
     int num_groups = m_router->get_net_ptr()->getNumGroups();
     int routers_per_group = m_router->get_net_ptr()->getRoutersPerGroup();
-    int global_channels_per_router = m_router->get_net_ptr()->getGlobalChannelsPerRouter();
+    int global_channels_per_router =
+                m_router->get_net_ptr()->getGlobalChannelsPerRouter();
 
     int my_id = m_router->get_id();
     int dest_id = route.dest_router;
     // already checked that in outportCompute() function
     assert(my_id != dest_id);
 
-    int group_src = int(my_id / routers_per_group);
+    int group_cur = int(my_id / routers_per_group);
     int group_dst = int(dest_id / routers_per_group);
-    
-    if (group_src != group_dst) {
-        int group_gap = (group_dst-group_src>0 ? (group_dst-group_src-1) : (group_dst-group_src-1+num_groups));
-        int router_in_group_src = group_gap / global_channels_per_router;
-        int router_out = group_src * routers_per_group + router_in_group_src;
+
+    if (group_cur != group_dst) {
+        int group_gap = (group_dst-group_cur>0 ?
+                (group_dst-group_cur-1) : (group_dst-group_cur-1+num_groups));
+        int router_in_group_cur = group_gap / global_channels_per_router;
+        int router_out = group_cur * routers_per_group + router_in_group_cur;
         if (my_id != router_out) {
             assert(inport_dirn == "Local");
-            int outport_idx = router_out-my_id>0 ? (router_out-my_id-1) : (router_out-my_id-1+routers_per_group);
+            int outport_idx = router_out-my_id>0 ?
+                (router_out-my_id-1) : (router_out-my_id-1+routers_per_group);
             outport_dirn = "Local" + std::to_string(outport_idx);
         } else {
             assert(inport_dirn == "Local" || inport_dirn.substr(0, 5) == "Local");
-            int outport_idx = group_gap - router_in_group_src * global_channels_per_router;
+            int outport_idx = group_gap
+                            - router_in_group_cur * global_channels_per_router;
             outport_dirn = "Global" + std::to_string(outport_idx);
         }
     } else {
         assert(inport_dirn == "Local" || inport_dirn.substr(0, 6) == "Global");
-        int outport_idx = dest_id-my_id>0 ? (dest_id-my_id-1) : (dest_id-my_id-1+routers_per_group);
+        int outport_idx = dest_id-my_id>0 ?
+            (dest_id-my_id-1) : (dest_id-my_id-1+routers_per_group);
+        outport_dirn = "Local" + std::to_string(outport_idx);
+    }
+
+    return m_outports_dirn2idx[outport_dirn];
+}
+
+// UGAL(Universal Globally-Adaptive Load-balanced) algorithm for dragonfly
+int
+RoutingUnit::outportComputeUGAL(RouteInfo route,
+                                int inport,
+                                PortDirection inport_dirn,
+                                flit *t_flit)
+{
+    PortDirection outport_dirn = "Unknown";
+    int num_routers = m_router->get_net_ptr()->getNumRouters();
+    assert(num_routers > 0);
+
+    int num_groups = m_router->get_net_ptr()->getNumGroups();
+    int routers_per_group = m_router->get_net_ptr()->getRoutersPerGroup();
+    int global_channels_per_router =
+        m_router->get_net_ptr()->getGlobalChannelsPerRouter();
+
+    int my_id = m_router->get_id();
+    int group_mid = route.intermediate_group;
+    int dest_id = route.dest_router;
+    // already checked that in outportCompute() function
+    assert(my_id != dest_id);
+
+    int group_cur = int(my_id / routers_per_group);
+    int group_dst = int(dest_id / routers_per_group);
+
+    // if current router is the beginning
+    // then randomly choose an intermediate group
+    // estimate latency and choose path between MIN and VAL
+    if (num_groups > 2 && group_cur != group_dst && my_id == route.src_router)
+    {
+        do {
+            group_mid = random_mt.random<unsigned>(0, num_groups - 1);
+        } while (group_mid == group_cur || group_mid == group_dst);
+        // estimate latency
+        int group_gap_dst_cur = (group_dst>group_cur ?
+            (group_dst-group_cur-1) : (group_dst-group_cur-1+num_groups));
+        int group_gap_mid_cur = (group_mid>group_cur ?
+            (group_mid-group_cur-1) : (group_mid-group_cur-1+num_groups));
+        int group_gap_dst_mid = (group_dst>group_mid ?
+            (group_dst-group_mid-1) : (group_dst-group_mid-1+num_groups));
+
+        int router_min = group_cur * routers_per_group
+                    + int(group_gap_dst_cur / global_channels_per_router);
+        int router_val1 = group_cur * routers_per_group +
+                    int(group_gap_mid_cur / global_channels_per_router);
+        int router_val2 = group_mid * routers_per_group +
+                    int(group_gap_dst_mid / global_channels_per_router);
+
+        int outport_idx_min = group_gap_dst_cur
+        - int(group_gap_dst_cur / global_channels_per_router)
+        * global_channels_per_router;
+        int outport_idx_val1 = group_gap_mid_cur
+        - int(group_gap_mid_cur / global_channels_per_router)
+        * global_channels_per_router;
+        int outport_idx_val2 = group_gap_dst_mid
+        - int(group_gap_dst_mid / global_channels_per_router)
+        * global_channels_per_router;
+
+        static int local_latency = m_router
+            ->getOutputUnit(m_outports_dirn2idx["Local0"])
+            ->get_link()->get_latency();
+        static int global_latency = m_router
+            ->getOutputUnit(m_outports_dirn2idx["Global0"])
+            ->get_link()->get_latency();
+        static int router_latency = m_router->get_pipe_stages();
+
+        int port_min = m_router->get_net_ptr()
+            ->getRouterPtr(router_min)->getRoutingUnit()
+            ->getPortIdx("Global" + std::to_string(outport_idx_min));
+        int port_val1 = m_router->get_net_ptr()
+            ->getRouterPtr(router_val1)->getRoutingUnit()
+            ->getPortIdx("Global" + std::to_string(outport_idx_val1));
+        int port_val2 = m_router->get_net_ptr()
+            ->getRouterPtr(router_val2)->getRoutingUnit()
+            ->getPortIdx("Global" + std::to_string(outport_idx_val2));
+
+        int latency_min = m_router->get_net_ptr()->getRouterPtr(router_min)
+        ->getOutputUnit(port_min)->get_link()->getBuffer()->getSize();
+        int latency_val1 = m_router->get_net_ptr()->getRouterPtr(router_val1)
+        ->getOutputUnit(port_val1)->get_link()->getBuffer()->getSize();
+        int latency_val2 = m_router->get_net_ptr()->getRouterPtr(router_val2)
+        ->getOutputUnit(port_val2)->get_link()->getBuffer()->getSize();
+
+        int min = latency_min + global_latency * 3 + local_latency * 2
+                + router_latency * 3 + 3;
+        int val = latency_val1 + latency_val2 + global_latency * 5
+                + local_latency * 3 + router_latency * 5 + 5;
+
+        // choose path between MIN and VAL
+        if (val < min) {
+            route.intermediate_group = group_mid;
+            t_flit->set_route(route);
+        } else {
+            group_mid = -1;
+        }
+    }
+
+    // if already in the intermediate group
+    // then the following path is the same as a minimal path
+    if (group_mid != -1 && group_cur == group_mid) {
+        route.intermediate_group = -1;
+        t_flit->set_route(route);
+        group_mid = -1;
+    }
+
+    // then group_mid != -1 means group_cur is the source group
+    if (group_mid != -1) {
+        // compute minimal route to group_mid
+        // it is equivalent to set group_dst = group_mid
+        // and compute minimal route to group_dst since group_cur != group_mid
+        // no need to reset dest_id since it has no use
+        // until computing route within group_dst
+        group_dst = group_mid;
+    }
+
+    // compute outport
+    if (group_cur != group_dst) {
+        int group_gap = (group_dst>group_cur ?
+                (group_dst-group_cur-1) : (group_dst-group_cur-1+num_groups));
+        int router_in_group_cur = group_gap / global_channels_per_router;
+        int router_out = group_cur * routers_per_group + router_in_group_cur;
+        if (my_id != router_out) {
+            assert(inport_dirn=="Local"||inport_dirn.substr(0, 6)=="Global");
+            int outport_idx = router_out>my_id ?
+                (router_out-my_id-1) : (router_out-my_id-1+routers_per_group);
+            outport_dirn = "Local" + std::to_string(outport_idx);
+        } else {
+            // no assertion since all inport_dirn are possible
+            int outport_idx = group_gap -
+                    router_in_group_cur * global_channels_per_router;
+            outport_dirn = "Global" + std::to_string(outport_idx);
+        }
+    } else {
+        assert(inport_dirn == "Local"||inport_dirn.substr(0, 6) == "Global");
+        int outport_idx = dest_id>my_id ?
+                (dest_id-my_id-1) : (dest_id-my_id-1+routers_per_group);
         outport_dirn = "Local" + std::to_string(outport_idx);
     }
 

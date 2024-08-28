@@ -84,6 +84,8 @@ class OutputUnit : public Consumer
         return m_out_link->get_id();
     }
 
+    NetworkLink* get_link() { return m_out_link; }
+
     inline void
     set_vc_state(VC_state_type state, int vc, Tick curTime)
     {

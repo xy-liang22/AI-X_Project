@@ -95,7 +95,7 @@ InputUnit::wakeup()
 
             // Route computation for this vc
             int outport = m_router->route_compute(t_flit->get_route(),
-                m_id, m_direction);
+                m_id, m_direction, t_flit);
 
             // Update output port in VC
             // All flits in this packet will use this output port

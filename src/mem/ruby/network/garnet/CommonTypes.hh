@@ -50,14 +50,17 @@ enum VC_state_type {IDLE_, VC_AB_, ACTIVE_, NUM_VC_STATE_TYPE_};
 enum VNET_type {CTRL_VNET_, DATA_VNET_, NULL_VNET_, NUM_VNET_TYPE_};
 enum flit_stage {I_, VA_, SA_, ST_, LT_, NUM_FLIT_STAGE_};
 enum link_type { EXT_IN_, EXT_OUT_, INT_, NUM_LINK_TYPES_ };
-enum RoutingAlgorithm { TABLE_ = 0, XY_ = 1, CUSTOM_ = 2, DRAGONFLY_ = 3,
+enum RoutingAlgorithm
+{
+    TABLE_ = 0, XY_ = 1, CUSTOM_ = 2,
+                        DRAGONFLY_MINIMAL_ = 3, UGAL_ = 4,
                         NUM_ROUTING_ALGORITHM_};
 
 struct RouteInfo
 {
     RouteInfo()
         : vnet(0), src_ni(0), src_router(0), dest_ni(0), dest_router(0),
-          hops_traversed(0)
+          hops_traversed(0), intermediate_group(-1)
     {}
 
     // destination format for table-based routing
@@ -70,6 +73,7 @@ struct RouteInfo
     int dest_ni;
     int dest_router;
     int hops_traversed;
+    int intermediate_group;
 };
 
 #define INFINITE_ 10000

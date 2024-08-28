@@ -229,7 +229,7 @@ NetworkInterface::wakeup()
         NetworkLink *inNetLink = iPort->inNetLink();
         if (inNetLink->isReady(curTick())) {
             flit *t_flit = inNetLink->consumeLink();
-            DPRINTF(RubyNetwork, "Recieved flit:%s\n", *t_flit);
+            DPRINTF(RubyNetwork, "Received flit:%s\n", *t_flit);
             assert(t_flit->m_width == iPort->bitWidth());
 
             int vnet = t_flit->get_vnet();
