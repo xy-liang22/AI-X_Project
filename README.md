@@ -18,7 +18,7 @@ scons build/NULL/gem5.opt PROTOCOL=Garnet_standalone -j $(nproc)
 ### Run
 
 ```bash
-./build/NULL/gem5.opt configs/example/garnet_synth_traffic.py --network=garnet --num-cpus=36 --num-dest=72 --num-dirs=128 --topology=Dragonfly --routers-per-group=4 --global-channels-per-router=2 --routing-algorithm=4 --inj-vnet=0 --synthetic=Dragonfly_WC --sim-cycles=10000 --injectionrate=0.01
+./build/NULL/gem5.opt configs/example/garnet_synth_traffic.py --network=garnet --num-cpus=36 --num-dest=72 --num-dirs=128 --topology=Dragonfly --routers-per-group=4 --global-channels-per-router=2 --routing-algorithm=4 --inj-vnet=0 --synthetic=Dragonfly_WC --garnet-deadlock-threshold=5000 --sim-cycles=10000000 --injectionrate=0.01
 ```
 
 ### Get Network Statistics
