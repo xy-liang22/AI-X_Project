@@ -75,3 +75,7 @@ class GarnetSyntheticTraffic(ClockedObject):
     )
     test = RequestPort("Port to the memory system to test")
     system = Param.System(Parent.any, "System we belong to")
+    num_groups = Param.Int(
+        -1,
+        "Number of groupss in Dragonfly topology",
+    )

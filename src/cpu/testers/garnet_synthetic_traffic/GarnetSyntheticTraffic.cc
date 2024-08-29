@@ -86,6 +86,7 @@ GarnetSyntheticTraffic::GarnetSyntheticTraffic(const Params &p)
       numPacketsSent(0),
       singleSender(p.single_sender),
       singleDest(p.single_dest),
+      numGroups(p.num_groups),
       trafficType(p.traffic_type),
       injRate(p.inj_rate),
       injVnet(p.inj_vnet),
@@ -102,6 +103,13 @@ GarnetSyntheticTraffic::GarnetSyntheticTraffic(const Params &p)
         fatal("Unknown Traffic Type: %s!\n", traffic);
     }
     traffic = trafficStringToEnum[trafficType];
+
+    if (numGroups != -1) {
+        numDestPerGroup = numDestinations / numGroups;
+        assert(numDestPerGroup * numGroups == numDestinations);
+    } else {
+        numDestPerGroup = -1;
+    }
 
     id = TESTER_NETWORK++;
     DPRINTF(GarnetSyntheticTraffic,"Config Created: Name = %s , and id = %d\n",
@@ -191,6 +199,8 @@ GarnetSyntheticTraffic::generatePkt()
     int source = id;
     int src_x = id%radix;
     int src_y = id/radix;
+    int num_groups = numGroups;
+    int nodes_per_group = numDestPerGroup;
 
     if (singleDest >= 0)
     {
@@ -236,6 +246,10 @@ GarnetSyntheticTraffic::generatePkt()
         dest_x = (src_x + (int) ceil(radix/2) - 1) % radix;
         dest_y = src_y;
         destination = dest_y*radix + dest_x;
+    } else if (traffic == DRAGONFLY_WC_) {
+        assert(num_groups != -1 && numDestPerGroup != -1);
+        destination = (source / nodes_per_group + 1) * nodes_per_group
+                    + random_mt.random<unsigned>(0, nodes_per_group - 1);
     }
     else {
         fatal("Unknown Traffic Type: %s!\n", traffic);
@@ -334,6 +348,7 @@ GarnetSyntheticTraffic::initTrafficType()
     trafficStringToEnum["tornado"] = TORNADO_;
     trafficStringToEnum["transpose"] = TRANSPOSE_;
     trafficStringToEnum["uniform_random"] = UNIFORM_RANDOM_;
+    trafficStringToEnum["Dragonfly_WC"] = DRAGONFLY_WC_;
 }
 
 void

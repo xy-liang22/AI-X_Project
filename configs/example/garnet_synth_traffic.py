@@ -57,6 +57,7 @@ parser.add_argument(
         "neighbor",
         "shuffle",
         "transpose",
+        "Dragonfly_WC",
     ],
 )
 
@@ -124,6 +125,12 @@ Ruby.define_options(parser)
 
 args = parser.parse_args()
 
+num_groups = -1
+if not (
+    args.routers_per_group == -1 and args.global_channels_per_router == -1
+):
+    num_groups = args.routers_per_group * args.global_channels_per_router + 1
+
 cpus = [
     GarnetSyntheticTraffic(
         num_packets_max=args.num_packets_max,
@@ -135,6 +142,7 @@ cpus = [
         inj_vnet=args.inj_vnet,
         precision=args.precision,
         num_dest=args.num_dest,
+        num_groups=num_groups,
     )
     for i in range(args.num_cpus)
 ]
