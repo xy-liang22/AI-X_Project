@@ -55,13 +55,13 @@ namespace gem5
         UNIT_HOPS_PER_FLIT, statistics::units::Hops_per_Flit::get(), \
         "Use statistics::units::Hops_per_Flit::get()")
 
-#define UNIT_CYCLE_PER_FLIT GEM5_DEPRECATED_MACRO( \
-        UNIT_CYCLE_PER_FLIT, statistics::units::Cycle_per_Flit::get(), \
-        "Use statistics::units::Cycle_per_Flit::get()")
+#define UNIT_TICK_PER_FLIT GEM5_DEPRECATED_MACRO( \
+        UNIT_TICK_PER_FLIT, statistics::units::Tick_per_Flit::get(), \
+        "Use statistics::units::Tick_per_Flit::get()")
 
-#define UNIT_CYCLE_PER_PACKET GEM5_DEPRECATED_MACRO( \
-        UNIT_CYCLE_PER_PACKET, statistics::units::Cycle_per_Packet::get(), \
-        "Use statistics::units::Cycle_per_Packet::get()")
+#define UNIT_TICK_PER_PACKET GEM5_DEPRECATED_MACRO( \
+        UNIT_TICK_PER_PACKET, statistics::units::Tick_per_Packet::get(), \
+        "Use statistics::units::Tick_per_Packet::get()")
 
 namespace statistics
 {
@@ -120,38 +120,42 @@ class Hops_per_Flit : public Base
     std::string getUnitString() const override { return Hops_per_Flit::toString(); }
 };
 
-class Cycle_per_Flit : public Base
+class Tick_per_Flit : public Base
 {
   private:
-    Cycle_per_Flit() {}
+    Tick_per_Flit() {}
   public:
-    Cycle_per_Flit(Cycle_per_Flit const&) = delete;
-    void operator=(Cycle_per_Flit const&) = delete;
-    static Cycle_per_Flit*
+    Tick_per_Flit(Tick_per_Flit const&) = delete;
+    void operator=(Tick_per_Flit const&) = delete;
+    static Tick_per_Flit*
     get()
     {
-        static Cycle_per_Flit instance;
+        static Tick_per_Flit instance;
         return &instance;
     }
-    static std::string toString() { return "Cycle/Flit"; }
-    std::string getUnitString() const override { return Cycle_per_Flit::toString(); }
+    static std::string toString() { return "Tick/Flit"; }
+    std::string getUnitString() const override {
+      return Tick_per_Flit::toString();
+    }
 };
 
-class Cycle_per_Packet : public Base
+class Tick_per_Packet : public Base
 {
   private:
-    Cycle_per_Packet() {}
+    Tick_per_Packet() {}
   public:
-    Cycle_per_Packet(Cycle_per_Packet const&) = delete;
-    void operator=(Cycle_per_Packet const&) = delete;
-    static Cycle_per_Packet*
+    Tick_per_Packet(Tick_per_Packet const&) = delete;
+    void operator=(Tick_per_Packet const&) = delete;
+    static Tick_per_Packet*
     get()
     {
-        static Cycle_per_Packet instance;
+        static Tick_per_Packet instance;
         return &instance;
     }
-    static std::string toString() { return "Cycle/Packet"; }
-    std::string getUnitString() const override { return Cycle_per_Packet::toString(); }
+    static std::string toString() { return "Tick/Packet"; }
+    std::string getUnitString() const override{
+      return Tick_per_Packet::toString();
+      }
 };
 
 }
