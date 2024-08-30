@@ -1,4 +1,4 @@
-./build/NULL/gem5.opt configs/example/garnet_synth_traffic.py --network=garnet --num-cpus=36 --num-dest=72 --num-dirs=128 --topology=Dragonfly --routers-per-group=4 --global-channels-per-router=2 --routing-algorithm=4 --inj-vnet=0 --synthetic=uniform_random --garnet-deadlock-threshold=50000 --sim-cycles=100000000 --injectionrate=0.4
+./build/NULL/gem5.opt configs/example/garnet_synth_traffic.py --network=garnet --num-cpus=36 --num-dest=72 --num-dirs=128 --topology=Dragonfly --routers-per-group=4 --global-channels-per-router=2 --routing-algorithm=5 --inj-vnet=0 --synthetic=Dragonfly_WC --garnet-deadlock-threshold=50000 --sim-cycles=100000000 --injectionrate=0.4
 bash -c '> network_stats.txt'
 grep "packets_injected::total" m5out/stats.txt | sed 's/system.ruby.network.packets_injected::total\s*/packets_injected = /' >> network_stats.txt
 grep "packets_received::total" m5out/stats.txt | sed 's/system.ruby.network.packets_received::total\s*/packets_received = /' >> network_stats.txt

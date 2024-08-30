@@ -141,7 +141,7 @@ cpus = [
         inj_rate=args.injectionrate,
         inj_vnet=args.inj_vnet,
         precision=args.precision,
-        num_dest=args.num_dest,
+        num_dest=args.num_cpus,
         num_groups=num_groups,
     )
     for i in range(args.num_cpus)

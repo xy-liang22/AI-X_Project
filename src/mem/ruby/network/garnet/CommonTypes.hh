@@ -53,7 +53,7 @@ enum link_type { EXT_IN_, EXT_OUT_, INT_, NUM_LINK_TYPES_ };
 enum RoutingAlgorithm
 {
     TABLE_ = 0, XY_ = 1, CUSTOM_ = 2,
-                        DRAGONFLY_MINIMAL_ = 3, UGAL_ = 4,
+                        DRAGONFLY_MINIMAL_ = 3, UGAL_ = 4, VAL_ = 5,
                         NUM_ROUTING_ALGORITHM_};
 
 struct RouteInfo
