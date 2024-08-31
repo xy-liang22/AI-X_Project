@@ -10,6 +10,7 @@ output.txt
 .*.swp
 .*.swo
 m5out
+plot
 /src/doxygen/html
 /ext/dramsim2/DRAMSim2
 /ext/mcpat/regression/*/*.out
