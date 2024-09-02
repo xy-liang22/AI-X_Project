@@ -56,7 +56,9 @@ class VirtualChannel
     void set_idle(Tick curTime);
     void set_active(Tick curTime);
     void set_outvc(int outvc)               { m_output_vc = outvc; }
+    void set_outvc_class(int outvc_class)   { m_outvc_class = outvc_class;}
     inline int get_outvc()                  { return m_output_vc; }
+    inline int get_outvc_class()            { return m_outvc_class; }
     void set_outport(int outport)           { m_output_port = outport; };
     inline int get_outport()                  { return m_output_port; }
 
@@ -104,6 +106,7 @@ class VirtualChannel
     int m_output_port;
     Tick m_enqueue_time;
     int m_output_vc;
+    int m_outvc_class;
 };
 
 } // namespace garnet

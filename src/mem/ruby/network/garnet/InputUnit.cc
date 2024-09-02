@@ -30,6 +30,7 @@
 
 
 #include "mem/ruby/network/garnet/InputUnit.hh"
+#include "mem/ruby/network/garnet/OutputUnit.hh"
 
 #include "debug/RubyNetwork.hh"
 #include "mem/ruby/network/garnet/Credit.hh"
@@ -100,6 +101,36 @@ InputUnit::wakeup()
             // Update output port in VC
             // All flits in this packet will use this output port
             // The output port field in the flit is updated after it wins SA
+
+            if (m_router->get_net_ptr()->isDragonfly()) {
+                RouteInfo route = t_flit->get_route();
+                int routers_per_group = m_router->get_net_ptr()->getRoutersPerGroup();
+                int group_cur = int(m_router->get_id() / routers_per_group);
+                int group_src = int(route.src_router / routers_per_group);
+                int group_dest = int(route.dest_router / routers_per_group);
+                int outvc_class = 0;
+                if(route.intermediate_group != -1) {
+                    outvc_class += 0;
+                }
+                else if (group_cur != group_src && group_cur != group_dest) {
+                    outvc_class += 1;
+                }
+                else if (group_cur == group_dest) {
+                    outvc_class += 2;
+                }
+                else if (group_cur == group_src && route.intermediate_group == -1) {
+                    outvc_class += 3;
+                }
+                else {
+                    assert(0);
+                }
+                // OutputUnit* output_unit = m_router->getOutputUnit(outport);
+                // output_unit->set_vc_state(ACTIVE_, outvc, curTick());
+                // if (!output_unit->is_vc_idle(outvc, curTick())) {
+                //     return;
+                // }
+                grant_outvc_class(vc, outvc_class);
+            }
             grant_outport(vc, outport);
 
         } else {

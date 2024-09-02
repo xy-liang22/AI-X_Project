@@ -389,68 +389,130 @@ RoutingUnit::outportComputeUGAL(RouteInfo route,
         do {
             group_mid = random_mt.random<unsigned>(0, num_groups - 1);
         } while (group_mid == group_cur || group_mid == group_dst);
+      
         // estimate latency
         int group_gap_dst_cur = (group_dst>group_cur ?
             (group_dst-group_cur-1) : (group_dst-group_cur-1+num_groups));
         int group_gap_mid_cur = (group_mid>group_cur ?
             (group_mid-group_cur-1) : (group_mid-group_cur-1+num_groups));
-        int group_gap_dst_mid = (group_dst>group_mid ?
-            (group_dst-group_mid-1) : (group_dst-group_mid-1+num_groups));
+        // int group_gap_dst_mid = (group_dst>group_mid ?
+        //     (group_dst-group_mid-1) : (group_dst-group_mid-1+num_groups));
 
         int router_min = group_cur * routers_per_group
                     + int(group_gap_dst_cur / global_channels_per_router);
         int router_val1 = group_cur * routers_per_group +
                     int(group_gap_mid_cur / global_channels_per_router);
-        int router_val2 = group_mid * routers_per_group +
-                    int(group_gap_dst_mid / global_channels_per_router);
+        // int router_val2 = group_mid * routers_per_group +
+        //             int(group_gap_dst_mid / global_channels_per_router);
+        // int router_val3 = group_mid * routers_per_group + int((num_groups 
+        //             - group_gap_mid_cur - 2) / global_channels_per_router);
 
-        int outport_idx_min = group_gap_dst_cur
-        - int(group_gap_dst_cur / global_channels_per_router)
-        * global_channels_per_router;
-        int outport_idx_val1 = group_gap_mid_cur
-        - int(group_gap_mid_cur / global_channels_per_router)
-        * global_channels_per_router;
-        int outport_idx_val2 = group_gap_dst_mid
-        - int(group_gap_dst_mid / global_channels_per_router)
-        * global_channels_per_router;
+        // int outport_idx_min = group_gap_dst_cur
+        // - int(group_gap_dst_cur / global_channels_per_router)
+        // * global_channels_per_router;
+        // int outport_idx_val1 = group_gap_mid_cur
+        // - int(group_gap_mid_cur / global_channels_per_router)
+        // * global_channels_per_router;
+        // int outport_idx_val2 = group_gap_dst_mid
+        // - int(group_gap_dst_mid / global_channels_per_router)
+        // * global_channels_per_router;
 
-        static int local_latency = m_router
-            ->getOutputUnit(m_outports_dirn2idx["Local0"])
-            ->get_link()->get_latency();
-        static int global_latency = m_router
-            ->getOutputUnit(m_outports_dirn2idx["Global0"])
-            ->get_link()->get_latency();
-        static int router_latency = m_router->get_pipe_stages();
+        // int latency_min_in = 0, latency_val1_in = 0, latency_val2_in = 0;
+        // if (my_id != router_min) {
+        //     int inport_idx_min = (my_id>router_min) ?
+        //         (my_id-router_min-1) : (my_id-router_min+routers_per_group-1);
+        //     int port_min_in = m_router->get_net_ptr()
+        //         ->getRouterPtr(router_min)->getRoutingUnit()
+        //         ->getPortIdx("Local" + std::to_string(inport_idx_min));
+        //     latency_min_in = m_router->get_net_ptr()->getRouterPtr(router_min)
+        //         ->getInputUnit(port_min_in)->get_link()->getBuffer()->getSize();
+        // }
 
-        int port_min = m_router->get_net_ptr()
+        // if (my_id != router_val1) {
+        //     int inport_idx_val1 = (my_id>router_val1) ?
+        //         (my_id-router_val1-1) : (my_id-router_val1+routers_per_group-1);
+        //     int port_val1_in = m_router->get_net_ptr()
+        //         ->getRouterPtr(router_val1)->getRoutingUnit()
+        //         ->getPortIdx("Local" + std::to_string(inport_idx_val1));
+        //     latency_val1_in = m_router->get_net_ptr()->getRouterPtr(router_val1)
+        //         ->getInputUnit(port_val1_in)->get_link()->getBuffer()->getSize();
+        // }
+
+        // if (router_val3 != router_val2) {
+        //     int inport_idx_val2 = (router_val3>router_val2) ?
+        //         (router_val3-router_val2-1)
+        //         : (router_val3-router_val2+routers_per_group-1);
+        //     int port_val2_in = m_router->get_net_ptr()
+        //         ->getRouterPtr(router_val2)->getRoutingUnit()
+        //         ->getPortIdx("Local" + std::to_string(inport_idx_val2));
+        //     latency_val2_in=m_router->get_net_ptr()->getRouterPtr(router_val2)
+        //       ->getInputUnit(port_val2_in)->get_link()->getBuffer()->getSize();
+        // }
+
+        // int port_min = m_router->get_net_ptr()
+        //     ->getRouterPtr(router_min)->getRoutingUnit()
+        //     ->getPortIdx("Global" + std::to_string(outport_idx_min));
+        // int port_val1 = m_router->get_net_ptr()
+        //     ->getRouterPtr(router_val1)->getRoutingUnit()
+        //     ->getPortIdx("Global" + std::to_string(outport_idx_val1));
+        // int port_val2 = m_router->get_net_ptr()
+        //     ->getRouterPtr(router_val2)->getRoutingUnit()
+        //     ->getPortIdx("Global" + std::to_string(outport_idx_val2));
+
+        // int latency_min_out = m_router->get_net_ptr()->getRouterPtr(router_min)
+        // ->getOutputUnit(port_min)->get_link()->getBuffer()->getSize();
+        // int latency_val1_out=m_router->get_net_ptr()->getRouterPtr(router_val1)
+        // ->getOutputUnit(port_val1)->get_link()->getBuffer()->getSize();
+        // int latency_val2_out=m_router->get_net_ptr()->getRouterPtr(router_val2)
+        // ->getOutputUnit(port_val2)->get_link()->getBuffer()->getSize();
+
+        // int min = latency_min_in + latency_min_out + global_latency
+        //         + local_latency * 2 + router_latency * 3;
+        // int val = latency_val1_in + latency_val1_out + latency_val2_in
+        //         + latency_val2_out + global_latency * 2
+        //         + local_latency * 3 + router_latency * 5;
+
+        int inport_idx_min = (my_id>router_min) ?
+            (my_id-router_min-1) : (my_id-router_min+routers_per_group-1);
+        int port_min_in = m_router->get_net_ptr()
             ->getRouterPtr(router_min)->getRoutingUnit()
-            ->getPortIdx("Global" + std::to_string(outport_idx_min));
-        int port_val1 = m_router->get_net_ptr()
+            ->getPortIdx("Local" + std::to_string(inport_idx_min));
+        std::vector<unsigned int> vc_load_min = m_router->get_net_ptr()->getRouterPtr(router_min)
+            ->getInputUnit(port_min_in)->get_link()->getVcLoad();
+        int load_min = std::accumulate(vc_load_min.begin(), vc_load_min.end(), 0u);
+
+        int inport_idx_val1 = (my_id>router_val1) ?
+            (my_id-router_val1-1) : (my_id-router_val1+routers_per_group-1);
+        int port_val1_in = m_router->get_net_ptr()
             ->getRouterPtr(router_val1)->getRoutingUnit()
-            ->getPortIdx("Global" + std::to_string(outport_idx_val1));
-        int port_val2 = m_router->get_net_ptr()
-            ->getRouterPtr(router_val2)->getRoutingUnit()
-            ->getPortIdx("Global" + std::to_string(outport_idx_val2));
+            ->getPortIdx("Local" + std::to_string(inport_idx_val1));
+        std::vector<unsigned int> vc_load_val1 = m_router->get_net_ptr()->getRouterPtr(router_val1)
+            ->getInputUnit(port_val1_in)->get_link()->getVcLoad();
+        int load_val1 = std::accumulate(vc_load_val1.begin(), vc_load_val1.end(), 0u);
 
-        int latency_min = m_router->get_net_ptr()->getRouterPtr(router_min)
-        ->getOutputUnit(port_min)->get_link()->getBuffer()->getSize();
-        int latency_val1 = m_router->get_net_ptr()->getRouterPtr(router_val1)
-        ->getOutputUnit(port_val1)->get_link()->getBuffer()->getSize();
-        int latency_val2 = m_router->get_net_ptr()->getRouterPtr(router_val2)
-        ->getOutputUnit(port_val2)->get_link()->getBuffer()->getSize();
+        // std::vector<unsigned int> outvc_load_min = m_router->get_net_ptr()->getRouterPtr(router_min)
+        //     ->getOutputUnit(port_min)->get_link()->getVcLoad();
+        // int load_min_out = std::accumulate(outvc_load_min.begin(), outvc_load_min.end(), 0u);
 
-        int min = latency_min + global_latency * 3 + local_latency * 2
-                + router_latency * 3 + 3;
-        int val = latency_val1 + latency_val2 + global_latency * 5
-                + local_latency * 3 + router_latency * 5 + 5;
+        // std::vector<unsigned int> outvc_load_val1 = m_router->get_net_ptr()->getRouterPtr(router_val1)
+        //     ->getOutputUnit(port_val1)->get_link()->getVcLoad();
+        // int load_val1_out = std::accumulate(outvc_load_val1.begin(), outvc_load_val1.end(), 0u);
+
+        int q_m_vc = vc_load_min[3], q_nm_vc = vc_load_val1[0];
 
         // choose path between MIN and VAL
-        if (val < min) {
+        if ((load_val1 * 5 < load_min * 3 || router_min == router_val1) && (q_nm_vc * 5 < q_m_vc * 3 || router_min != router_val1)) {
             route.intermediate_group = group_mid;
             t_flit->set_route(route);
         } else {
             group_mid = -1;
         }
+        // if ((load_val1 + load_val1_out * 1.0 * global_channels_per_router / routers_per_group) * 5 < (load_min + load_min_out * 1.0 * global_channels_per_router / routers_per_group) * 3) {
+        //     route.intermediate_group = group_mid;
+        //     t_flit->set_route(route);
+        // } else {
+        //     group_mid = -1;
+        // }
     }
 
     // if already in the intermediate group

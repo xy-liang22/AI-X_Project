@@ -88,7 +88,7 @@ OutputUnit::increment_credit(int out_vc)
 bool
 OutputUnit::has_credit(int out_vc)
 {
-    assert(outVcState[out_vc].isInState(ACTIVE_, curTick()));
+    //assert(outVcState[out_vc].isInState(ACTIVE_, curTick()));
     return outVcState[out_vc].has_credit();
 }
 
@@ -99,6 +99,19 @@ OutputUnit::has_free_vc(int vnet)
 {
     int vc_base = vnet*m_vc_per_vnet;
     for (int vc = vc_base; vc < vc_base + m_vc_per_vnet; vc++) {
+        if (is_vc_idle(vc, curTick()))
+            return true;
+    }
+
+    return false;
+}
+
+bool
+OutputUnit::has_free_vc_from_class(int vnet, int outvc_class)
+{
+    int vc_base = vnet*m_vc_per_vnet;
+    int vcs_per_class = m_vc_per_vnet / 4;
+    for (int vc = vc_base + outvc_class * vcs_per_class; vc < vc_base + (outvc_class+1) * vcs_per_class; vc++) {
         if (is_vc_idle(vc, curTick()))
             return true;
     }
@@ -118,6 +131,20 @@ OutputUnit::select_free_vc(int vnet)
         }
     }
 
+    return -1;
+}
+
+int
+OutputUnit::select_free_vc_from_class(int vnet, int vc_class)
+{
+    int vcs_per_class = m_vc_per_vnet / 4;
+    assert(vcs_per_class * 4 == m_vc_per_vnet);
+    for (int vc = vc_class * vcs_per_class; vc < vc_class * vcs_per_class + vcs_per_class; vc++) {
+        if (is_vc_idle(vc, curTick())) {
+            outVcState[vc].setState(ACTIVE_, curTick());
+            return vc;
+        }
+    }
     return -1;
 }
 

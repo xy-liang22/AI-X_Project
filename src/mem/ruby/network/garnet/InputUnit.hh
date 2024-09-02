@@ -87,6 +87,12 @@ class InputUnit : public Consumer
         virtualChannels[vc].set_outvc(outvc);
     }
 
+    inline void
+    grant_outvc_class(int vc, int outvc_class)
+    {
+        virtualChannels[vc].set_outvc_class(outvc_class);
+    }
+
     inline int
     get_outport(int invc)
     {
@@ -97,6 +103,12 @@ class InputUnit : public Consumer
     get_outvc(int invc)
     {
         return virtualChannels[invc].get_outvc();
+    }
+
+    inline int
+    get_outvc_class(int invc)
+    {
+        return virtualChannels[invc].get_outvc_class();
     }
 
     inline Tick
@@ -117,6 +129,12 @@ class InputUnit : public Consumer
     getTopFlit(int vc)
     {
         return virtualChannels[vc].getTopFlit();
+    }
+
+    inline NetworkLink*
+    get_link()
+    {
+        return m_in_link;
     }
 
     inline bool

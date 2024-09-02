@@ -128,6 +128,9 @@ SwitchAllocator::arbitrate_inports()
                 // send_allowed conditions described in that function.
                 bool make_request =
                     send_allowed(inport, invc, outport, outvc);
+                if (m_router->get_net_ptr()->isDragonfly()) {
+                    make_request = send_allowed_from_class(inport, invc, outport, outvc, input_unit->get_outvc_class(invc));
+                }
 
                 if (make_request) {
                     m_input_arbiter_activity++;
@@ -182,7 +185,13 @@ SwitchAllocator::arbitrate_outports()
                 int outvc = input_unit->get_outvc(invc);
                 if (outvc == -1) {
                     // VC Allocation - select any free VC from outport
-                    outvc = vc_allocate(outport, inport, invc);
+                    if (m_router->get_net_ptr()->isDragonfly()) {
+                        outvc = vc_allocate_from_class(outport, inport, invc, input_unit->get_outvc_class(invc));
+                    }
+                    else outvc = vc_allocate(outport, inport, invc);
+                }
+                else if (m_router->get_net_ptr()->isDragonfly()){
+                    m_router->getOutputUnit(outport)->set_vc_state(ACTIVE_, outvc, curTick());
                 }
 
                 // remove flit from Input VC
@@ -337,6 +346,63 @@ SwitchAllocator::send_allowed(int inport, int invc, int outport, int outvc)
     return true;
 }
 
+bool
+SwitchAllocator::send_allowed_from_class(int inport, int invc, int outport, int outvc, int outvc_class)
+{
+    // Check if outvc needed
+    // Check if credit needed (for multi-flit packet)
+    // Check if ordering violated (in ordered vnet)
+
+    int vnet = get_vnet(invc);
+    bool has_outvc = (outvc != -1);
+    bool has_credit = false;
+
+    auto output_unit = m_router->getOutputUnit(outport);
+    if (!has_outvc) {
+
+        // needs outvc
+        // this is only true for HEAD and HEAD_TAIL flits.
+
+        if (output_unit->has_free_vc_from_class(vnet, outvc_class)) {
+
+            has_outvc = true;
+
+            // each VC has at least one buffer,
+            // so no need for additional credit check
+            has_credit = true;
+        }
+    } else {
+        has_credit = output_unit->has_credit(outvc);
+    }
+
+    // cannot send if no outvc or no credit.
+    if (!has_outvc || !has_credit)
+        return false;
+
+
+    // protocol ordering check
+    if ((m_router->get_net_ptr())->isVNetOrdered(vnet)) {
+        auto input_unit = m_router->getInputUnit(inport);
+
+        // enqueue time of this flit
+        Tick t_enqueue_time = input_unit->get_enqueue_time(invc);
+
+        // check if any other flit is ready for SA and for same output port
+        // and was enqueued before this flit
+        int vc_base = vnet*m_vc_per_vnet;
+        for (int vc_offset = 0; vc_offset < m_vc_per_vnet; vc_offset++) {
+            int temp_vc = vc_base + vc_offset;
+            if (input_unit->need_stage(temp_vc, SA_, curTick()) &&
+               (input_unit->get_outport(temp_vc) == outport) &&
+               (input_unit->get_enqueue_time(temp_vc) < t_enqueue_time)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 // Assign a free VC to the winner of the output port.
 int
 SwitchAllocator::vc_allocate(int outport, int inport, int invc)
@@ -344,6 +410,20 @@ SwitchAllocator::vc_allocate(int outport, int inport, int invc)
     // Select a free VC from the output port
     int outvc =
         m_router->getOutputUnit(outport)->select_free_vc(get_vnet(invc));
+
+    // has to get a valid VC since it checked before performing SA
+    assert(outvc != -1);
+    m_router->getInputUnit(inport)->grant_outvc(invc, outvc);
+    return outvc;
+}
+
+// Assign a free VC to the winner of the output port.
+int
+SwitchAllocator::vc_allocate_from_class(int outport, int inport, int invc, int outvc_class)
+{
+    // Select a free VC from the output port
+    int outvc =
+        m_router->getOutputUnit(outport)->select_free_vc_from_class(get_vnet(invc), outvc_class);
 
     // has to get a valid VC since it checked before performing SA
     assert(outvc != -1);

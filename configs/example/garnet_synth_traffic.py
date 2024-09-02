@@ -118,6 +118,12 @@ parser.add_argument(
                         Set to -1 to inject randomly in all vnets.",
 )
 
+parser.add_argument(
+    "--is-dragonfly",
+    default=False,
+    help="""Whether the topology is dragonfly""",
+)
+
 #
 # Add the ruby specific and protocol specific options
 #
@@ -130,6 +136,9 @@ if not (
     args.routers_per_group == -1 and args.global_channels_per_router == -1
 ):
     num_groups = args.routers_per_group * args.global_channels_per_router + 1
+
+if args.topology == "Dragonfly":
+    args.is_dragonfly = True
 
 cpus = [
     GarnetSyntheticTraffic(

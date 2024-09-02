@@ -64,7 +64,9 @@ class SwitchAllocator : public Consumer
     void arbitrate_inports();
     void arbitrate_outports();
     bool send_allowed(int inport, int invc, int outport, int outvc);
+    bool send_allowed_from_class(int inport, int invc, int outport, int outvc, int outvc_class);
     int vc_allocate(int outport, int inport, int invc);
+    int vc_allocate_from_class(int outport, int inport, int invc, int outvc_class);
 
     inline double
     get_input_arbiter_activity()

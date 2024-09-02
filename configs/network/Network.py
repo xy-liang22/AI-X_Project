@@ -95,7 +95,7 @@ def define_options(parser):
         "--vcs-per-vnet",
         action="store",
         type=int,
-        default=4,
+        default=16,
         help="""number of virtual channels per virtual network
             inside garnet network.""",
     )
@@ -132,12 +132,6 @@ def define_options(parser):
         default=False,
         help="""SimpleNetwork links uses a separate physical
             channel for each virtual network""",
-    )
-    parser.add_argument(
-        "--num-dest",
-        type=int,
-        default=1,
-        help="""The actual number of nodes""",
     )
 
 
@@ -192,6 +186,7 @@ def init_network(options, network, InterfaceClass):
         network.ni_flit_size = options.link_width_bits / 8
         network.routing_algorithm = options.routing_algorithm
         network.garnet_deadlock_threshold = options.garnet_deadlock_threshold
+        network.is_dragonfly = options.is_dragonfly
 
         # Create Bridges and connect them to the corresponding links
         for intLink in network.int_links:
